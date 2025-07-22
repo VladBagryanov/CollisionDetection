@@ -4,6 +4,7 @@ import json
 import chunk_getter
 import argparse
 from llama_index.core import PropertyGraphIndex
+from llama_index.graph_stores.neo4j import Neo4jPGStore
 
 def main():
     parser = argparse.ArgumentParser(description="Collision detection.")
@@ -17,9 +18,11 @@ def main():
 
     nodes = data.node_getter()
 
+    graph_store = Neo4jPGStore(url="bolt://localhost:7687", username="neo4j", password="supersecret123")
     graph_index = PropertyGraphIndex(
         nodes=nodes,
         llm=custom_llm,
+        property_graph_store=graph_store,
         embed_model=custom_embedder,
         include_embeddings=True,
     )

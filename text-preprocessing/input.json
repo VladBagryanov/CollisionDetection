@@ -1,6 +1,6 @@
 {
   "conflict": "sboba?",
   "format": "text",
-  "data_path": "text-preprocessing/data",
-  "chunker": "basic"
+  "data_path": "text-preprocessing/input_data",
+  "chunker": "LLM"
 }

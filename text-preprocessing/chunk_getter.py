@@ -11,8 +11,8 @@ class Data:
                  data_path: str,
                  format:str = "text",
                  chunker:str = "basic",
-                 chunk_size = 150,
-                 chunk_overlap = 50):
+                 chunk_size = 100,
+                 chunk_overlap = 15):
         self.basic_promt = basic_promt
         self.data_path = data_path
         self.format = format

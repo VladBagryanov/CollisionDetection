@@ -1,2 +1,2 @@
-FOLDER_ID = ""
+FOLDER_ID=""
 AUTH_TOKEN=""
