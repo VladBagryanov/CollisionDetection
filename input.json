@@ -1,0 +1,6 @@
+{
+  "conflict": "check this fact",
+  "format": "text",
+  "data_path": "data",
+  "chunker": "basic"
+}

@@ -1,6 +1,0 @@
-{
-  "conflict": "sboba?",
-  "format": "text",
-  "data_path": "text-preprocessing/data",
-  "chunker": "basic"
-}

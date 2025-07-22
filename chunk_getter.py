@@ -7,13 +7,14 @@ from yandex_cloud_ml_sdk import YCloudML
 import  tokens
 
 class Data:
-    def __init__(self,basic_promt: str,
+    def __init__(self,
+                 input_promt: str,
                  data_path: str,
                  format:str = "text",
                  chunker:str = "basic",
                  chunk_size = 150,
                  chunk_overlap = 50):
-        self.basic_promt = basic_promt
+        self.input_promt = input_promt
         self.data_path = data_path
         self.format = format
         self.chunker = chunker

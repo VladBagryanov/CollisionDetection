@@ -1,2 +1,0 @@
-FOLDER_ID = ""
-AUTH_TOKEN=""

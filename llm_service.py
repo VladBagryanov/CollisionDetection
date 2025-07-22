@@ -1,7 +1,7 @@
-from typing import Dict, Any, Optional
-# import json
+from typing import Optional
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
+import requests
 
 class YandexCloudLLM:
     """
@@ -13,7 +13,9 @@ class YandexCloudLLM:
         self,
         api_key: str,
         folder_id: str,
+        model_url: str = None,
         model_uri: str = "llama-lite",
+        model_type: str = "gpt",
         temperature: float = 0.1,
         max_tokens: int = 1000,
         timeout: int = 30
@@ -29,12 +31,15 @@ class YandexCloudLLM:
             max_tokens: Максимальное количество токенов
             timeout: Таймаут запроса в секундах
         """
+        self.api_key=api_key
+        if model_url:
+            self.model_url = model_url
         self.client = OpenAI(
             api_key=api_key,
             base_url="https://llm.api.cloud.yandex.net/v1"
         )
         
-        self.model = f"gpt://{folder_id}/{model_uri}/latest"
+        self.model = f"{model_type}://{folder_id}/{model_uri}/latest"
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.timeout = timeout
@@ -89,6 +94,58 @@ class YandexCloudLLM:
 
             return result
             
+        except Exception as e:
+            print(f"Ошибка при запросе к LLM API: {str(e)}")
+            raise
+
+    def request_gpt(
+        self,
+        prompt: str,
+        system_prompt: str = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None
+    ) -> str:
+        data = {}
+        data["modelUri"] = self.model
+        data["completionOptions"] = {"temperature": temperature, "maxTokens": max_tokens}
+        data["messages"] = []
+        if (system_prompt != None):
+            data["messages"].append({"role": "system", "text": system_prompt})
+        data["messages"].append({"role": "user", "text": prompt})
+        
+        try:
+            response = requests.post(
+                self.model_url,
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {self.api_key}"
+                },
+                json=data,
+            )
+            result = response.json()["result"]["alternatives"]
+            assert len(result) != 0, "error"
+            return result[0]["message"]["text"]
+        except Exception as e:
+            print(f"Ошибка при запросе к LLM API: {str(e)}")
+            raise
+
+    def request_emb(
+        self,
+        text: str = None
+    ) -> str:
+        try:
+            data = {}
+            data["modelUri"] = self.model
+            data["text"] = text
+            response = requests.post(
+                self.model_url,
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {self.api_key}"
+                },
+                json=data,
+            )
+            return response.json()["embedding"]
         except Exception as e:
             print(f"Ошибка при запросе к LLM API: {str(e)}")
             raise

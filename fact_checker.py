@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import logging
 from pathlib import Path
 import json
+from llm_service import YandexCloudLLM
+import tokens
 
 @dataclass
 class FactCheckResult:
@@ -44,8 +46,6 @@ class FactConsistencyChecker:
             level=logging.INFO,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
-
-
 
     def check_facts(self, text: str, relevant_facts: List[str]) -> FactCheckResult:
         """
@@ -99,8 +99,6 @@ class FactConsistencyChecker:
             self.logger.error(f"Ошибка при проверке фактов: {str(e)}")
             raise
 
-
-
     def _validate_response(self, response: Dict[str, Any]) -> None:
         """
         Проверка структуры ответа от модели.
@@ -134,8 +132,6 @@ class FactConsistencyChecker:
         for inc in response['inconsistencies']:
             if not all(k in inc for k in ['statement', 'fact', 'explanation']):
                 raise ValueError("Некорректная структура элемента inconsistencies")
-
-
 
     def _create_prompt(self, text: str, facts: List[str]) -> str:
         """
@@ -185,4 +181,13 @@ class FactConsistencyChecker:
             confidence=response["confidence"],
             relevant_facts=relevant_facts,
             explanation=response["explanation"]
-        ) 
+        )
+        
+llm_service = YandexCloudLLM(
+    api_key=tokens.AUTH_TOKEN,
+    folder_id=tokens.FOLDER_ID,
+    model_uri="llama-lite",
+    temperature=0.1
+)
+
+checker = FactConsistencyChecker(llm_service=llm_service)
