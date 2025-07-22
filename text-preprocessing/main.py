@@ -1,5 +1,5 @@
 # python3 /path/to/text-preprocessing/main.py --input_json /path/to/text-preprocessing/input.json
-import graph_rag
+from graph_rag import custom_embedder, custom_llm
 import json
 import chunk_getter
 import argparse
@@ -17,14 +17,15 @@ def main():
 
     nodes = data.node_getter()
 
-    custom_embedder = graph_rag.CustomEmbeddingModel()
-    custom_llm = graph_rag.CustomLLMAPI()
     graph_index = PropertyGraphIndex(
         nodes=nodes,
         llm=custom_llm,
         embed_model=custom_embedder,
         include_embeddings=True,
     )
+    query_engine = graph_index.as_query_engine(llm=custom_llm)
+    response = query_engine.query("What is the name the African bush elephant?")
+    print(response)
 
 if __name__ == '__main__':
     main()

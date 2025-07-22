@@ -4,6 +4,7 @@ from llama_index.core.node_parser import (
     SentenceSplitter
 )
 from yandex_cloud_ml_sdk import YCloudML
+import  tokens
 
 class Data:
     def __init__(self,basic_promt: str,
@@ -19,8 +20,8 @@ class Data:
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.sdk = YCloudML(
-          folder_id="",
-          auth="",
+          folder_id=tokens.FOLDER_ID,
+          auth=tokens.AUTH_TOKEN,
         )
 
     def basic_chunks(self, docs: list[str]):
