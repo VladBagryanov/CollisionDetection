@@ -1,12 +1,9 @@
-from llama_index.core import SimpleDirectoryReader
-import json
-import argparse
+from llama_index.core import SimpleDirectoryReader, Document
 from llama_index.core.node_parser import (
     SimpleNodeParser,
     SentenceSplitter
 )
 from yandex_cloud_ml_sdk import YCloudML
-from llama_index.core import Document, Settings
 
 class Data:
     def __init__(self,basic_promt: str,
@@ -59,29 +56,17 @@ class Data:
         docs = [Document(text=doc) for doc in new_docs]
         parser = SentenceSplitter()
         return parser.get_nodes_from_documents(docs)
-            
 
-def main():
-    parser = argparse.ArgumentParser(description="Collision detection.")
-    parser.add_argument("--input_json", type=str, help="Path to input json")
-
-    args = parser.parse_args()
-
-    with open(args.input_json, "r") as file:
-        input_json = json.load(file)
-        data = Data(input_json["conflict"], input_json["data_path"], chunker="LLM")
-
-    docs = []
-    if data.format == "text":
-        docs = SimpleDirectoryReader(input_dir=data.data_path, recursive=True).load_data()
-    if data.format == "csv":
-        pass
-
-    nodes = []
-    if data.chunker == "basic":
-        nodes = data.basic_chunks(docs)
-    if data.chunker == "LLM":
-        nodes = data.llm_chunks(docs)
-
-if __name__ == '__main__':
-    main()
+    def node_getter(self):
+        docs = []
+        if self.format == "text":
+            docs = SimpleDirectoryReader(input_dir=self.data_path, recursive=True).load_data()
+        if self.format == "csv":
+            pass
+    
+        nodes = []
+        if self.chunker == "basic":
+            nodes = self.basic_chunks(docs)
+        if self.chunker == "LLM":
+            nodes = self.llm_chunks(docs)
+        return nodes
