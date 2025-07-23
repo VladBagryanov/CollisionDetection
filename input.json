@@ -1,5 +1,5 @@
 {
-  "conflict": "check this fact",
+  "conflict": "Elephants are the smallest animals",
   "format": "text",
   "data_path": "data",
   "chunker": "basic"

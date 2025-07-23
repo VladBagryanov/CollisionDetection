@@ -6,6 +6,8 @@ import chunk_getter
 import argparse
 from llama_index.core import PropertyGraphIndex
 from fact_checker import checker
+from llama_index.core.postprocessor import LLMRerank
+from llama_index.core.prompts import PromptTemplate
 
 def main():
     parser = argparse.ArgumentParser(description="Collision detection.")
@@ -18,19 +20,69 @@ def main():
         data = chunk_getter.Data(input_json["conflict"], input_json["data_path"], chunker=input_json["chunker"])
 
     nodes = data.node_getter()
-
     graph_index = PropertyGraphIndex(
         nodes=nodes,
         llm=custom_llm,
         embed_model=custom_embedder,
         include_embeddings=True,
     )
-    query_engine = graph_index.as_query_engine(llm=custom_llm)
-    response = query_engine.query("What is the name the African bush elephant?")
-    print(response.response)
-    
+
+    retriever = graph_index.as_retriever(
+        include_text=True,
+        similarity_top_k=30
+    )
+
+    prompt_str = (
+        "A list of documents is shown below. Each document has a number next to it along "
+        "with a summary of the document. A question is also provided. \n"
+        "Respond with the numbers of the documents "
+        "you should consult to answer the question, in order of relevance, as well \n"
+        "as the relevance score. The relevance score is a number from 1-10 based on "
+        "how relevant you think the document is to the question.\n"
+        "If some documents contain conflicting or contradictory information relevant to the question, "
+        "assign relevance scores in a balanced way that fairly represents the differing viewpoints "
+        "or data, so conflicting evidence is not overshadowed by other documents.\n"
+        "Do not include any documents that are not relevant to the question. \n"
+        "Example format: \n"
+        "Document 1:\n<summary of document 1>\n\n"
+        "Document 2:\n<summary of document 2>\n\n"
+        "...\n\n"
+        "Document 10:\n<summary of document 10>\n\n"
+        "Question: <question>\n"
+        "Answer:\n"
+        "Doc: 9, Relevance: 7\n"
+        "Doc: 3, Relevance: 4\n"
+        "Doc: 7, Relevance: 3\n\n"
+        "Let's try this now: \n\n"
+        "{context_str}\n"
+        "Question: {query_str}\n"
+        "Answer:\n"
+    )
+
+    custom_choice_template = PromptTemplate(
+        template=prompt_str
+    )
+
+    reranker = LLMRerank(
+        llm=custom_llm,
+        choice_batch_size=5,
+        top_n=3,
+        choice_select_prompt=custom_choice_template
+    )
+
+    query_engine = graph_index.as_query_engine(
+        llm=custom_llm,
+        include_text=True,
+        imilarity_top_k=3,
+        node_postprocessors=[reranker],
+        postprocessors=[retriever],
+    )
+
+    response = query_engine.query(data.input_promt)
+
     facts = []
     facts.append(response.response)
+
     result = checker.check_facts(data.input_promt, facts)
     print(result)
 
