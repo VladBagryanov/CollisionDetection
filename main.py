@@ -2,12 +2,14 @@
 
 from graph_rag import custom_embedder, custom_llm
 import json
+import os
 import chunk_getter
 import argparse
 from llama_index.core import PropertyGraphIndex
 from fact_checker import checker
 from llama_index.core.postprocessor import LLMRerank
 from llama_index.core.prompts import PromptTemplate
+from llama_index.graph_stores.neo4j import Neo4jPGStore
 
 def main():
     parser = argparse.ArgumentParser(description="Collision detection.")
@@ -20,12 +22,24 @@ def main():
         data = chunk_getter.Data(input_json["conflict"], input_json["data_path"], chunker=input_json["chunker"])
 
     nodes = data.node_getter()
-    graph_index = PropertyGraphIndex(
-        nodes=nodes,
-        llm=custom_llm,
-        embed_model=custom_embedder,
-        include_embeddings=True,
-    )
+
+    graph_store = Neo4jPGStore(url="bolt://localhost:7687", username="neo4j", password="supersecret123")
+
+    if os.path.exists('data') and os.path.exists('plugins'):
+        graph_index = PropertyGraphIndex.from_existing(
+            llm=custom_llm,
+            property_graph_store=graph_store,
+            embed_model=custom_embedder,
+            include_embeddings=True,
+        )
+    else:
+        graph_index = PropertyGraphIndex(
+            nodes=nodes,
+            llm=custom_llm,
+            property_graph_store=graph_store,
+            embed_model=custom_embedder,
+            include_embeddings=True,
+        )
 
     retriever = graph_index.as_retriever(
         include_text=True,
@@ -73,7 +87,7 @@ def main():
     query_engine = graph_index.as_query_engine(
         llm=custom_llm,
         include_text=True,
-        imilarity_top_k=3,
+        similarity_top_k=3,
         node_postprocessors=[reranker],
         postprocessors=[retriever],
     )
