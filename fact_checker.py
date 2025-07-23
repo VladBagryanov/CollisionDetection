@@ -10,7 +10,9 @@ import tokens
 class FactCheckResult:
     """Результат проверки фактов"""
     has_conflicts: bool  # Есть ли противоречия
+    has_supporting_facts: bool  # Есть ли подтверждающие факты
     inconsistencies: List[Dict[str, str]]  # Список найденных противоречий
+    supporting_facts: List[Dict[str, str]]  # Список подтверждающих фактов
     confidence: float  # Уверенность в результате (0-1)
     relevant_facts: List[str]  # Использованные для проверки факты
     explanation: str  # Объяснение результата
@@ -109,7 +111,7 @@ class FactConsistencyChecker:
         Raises:
             ValueError: Если структура ответа некорректна
         """
-        required_fields = ['has_conflicts', 'inconsistencies', 'confidence', 'explanation']
+        required_fields = ['has_conflicts', 'inconsistencies', 'supporting_facts', 'confidence', 'explanation']
         
         # Проверяем наличие всех необходимых полей
         if not all(field in response for field in required_fields):
@@ -119,8 +121,14 @@ class FactConsistencyChecker:
         if not isinstance(response['has_conflicts'], bool):
             raise ValueError("Поле 'has_conflicts' должно быть boolean")
         
+        if not isinstance(response['has_supporting_facts'], bool):
+            raise ValueError("Поле 'has_supporting_facts' должно быть boolean")
+        
         if not isinstance(response['inconsistencies'], list):
             raise ValueError("Поле 'inconsistencies' должно быть списком")
+            
+        if not isinstance(response['supporting_facts'], list):
+            raise ValueError("Поле 'supporting_facts' должно быть списком")
         
         if not isinstance(response['confidence'], (int, float)):
             raise ValueError("Поле 'confidence' должно быть числом")
@@ -132,6 +140,11 @@ class FactConsistencyChecker:
         for inc in response['inconsistencies']:
             if not all(k in inc for k in ['statement', 'fact', 'explanation']):
                 raise ValueError("Некорректная структура элемента inconsistencies")
+                
+        # Проверяем структуру supporting_facts
+        for sup in response['supporting_facts']:
+            if not all(k in sup for k in ['statement', 'fact', 'explanation']):
+                raise ValueError("Некорректная структура элемента supporting_facts")
 
     def _create_prompt(self, text: str, facts: List[str]) -> str:
         """
@@ -145,8 +158,8 @@ class FactConsistencyChecker:
             Промпт для LLM
         """
         formatted_facts = "\n".join(f"- {fact}" for fact in facts)
-        prompt_template = f"""Входной текст для проверки: {text}
-        Известные факты: {formatted_facts}"""
+        prompt_template = f"""Input text to check: {text}
+        Known facts: {formatted_facts}"""
         
         return prompt_template
 
@@ -157,7 +170,7 @@ class FactConsistencyChecker:
         Returns:
             Системный промпт
         """
-        with open("system_prompt.txt", "r") as f:
+        with open("system_prompt_eng.txt", "r") as f:
             return f.read()
 
     def _parse_llm_response(
@@ -177,7 +190,9 @@ class FactConsistencyChecker:
         """
         return FactCheckResult(
             has_conflicts=response["has_conflicts"],
+            has_supporting_facts=response["has_supporting_facts"],
             inconsistencies=response["inconsistencies"],
+            supporting_facts=response["supporting_facts"],
             confidence=response["confidence"],
             relevant_facts=relevant_facts,
             explanation=response["explanation"]
