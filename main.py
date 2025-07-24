@@ -2,7 +2,6 @@
 
 from graph_rag import custom_embedder, custom_llm
 import json
-import os
 import chunk_getter
 import argparse
 from llama_index.core import PropertyGraphIndex
@@ -81,6 +80,7 @@ def get_retrieved_nodes(
 def main():
     parser = argparse.ArgumentParser(description="Collision detection.")
     parser.add_argument("--input_json", type=str, help="Path to input json")
+    parser.add_argument("--has_graph", type=bool, default=False, help="Exist gpaph")
 
     args = parser.parse_args()
 
@@ -92,7 +92,7 @@ def main():
 
     graph_store = Neo4jPGStore(url="bolt://localhost:7687", username="neo4j", password="supersecret123")
     graph_index = None
-    if os.path.exists('data') and os.path.exists('plugins'):
+    if args.has_graph:
         graph_index = PropertyGraphIndex.from_existing(
             llm=custom_llm,
             property_graph_store=graph_store,
@@ -119,4 +119,13 @@ def main():
     print(result)
 
 if __name__ == '__main__':
+    import time
+
+    start_time = time.time()
     main()
+    end_time = time.time()
+
+    execution_time_seconds = end_time - start_time
+    execution_time_minutes = execution_time_seconds / 60
+
+    print(f"Функция выполнилась за {execution_time_minutes:.2f} минут")
