@@ -8,15 +8,10 @@ from llama_index.core import PropertyGraphIndex
 from fact_checker import checker
 from llama_index.core.postprocessor import LLMRerank
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.retrievers import VectorIndexRetriever
 
-
-
-from llama_index.core import StorageContext
-from llama_index.core import load_index_from_storage
 from llama_index.core.retrievers import VectorContextRetriever, LLMSynonymRetriever
 from llama_index.core import QueryBundle
+import time
 
 def get_retrieved_nodes(
     index, custom_llm, custom_embedder, query_str, vector_top_k=10, reranker_top_n=3, with_reranker=False
@@ -85,6 +80,7 @@ def get_retrieved_nodes(
 def main():
     parser = argparse.ArgumentParser(description="Collision detection.")
     parser.add_argument("--input_json", type=str, help="Path to input json")
+    parser.add_argument("--has_graph", type=bool, default=False, help="Exist gpaph")
 
     args = parser.parse_args()
 
@@ -94,12 +90,20 @@ def main():
 
     nodes = data.node_getter()
 
-    graph_index = PropertyGraphIndex(
-        nodes=nodes,
-        llm=custom_llm,
-        embed_model=custom_embedder,
-        include_embeddings=True,
-    )
+    graph_index=None
+    if args.has_graph:
+        graph_index = PropertyGraphIndex.from_existing(
+            llm=custom_llm,
+            embed_model=custom_embedder,
+            include_embeddings=True,
+        )
+    else:
+        graph_index = PropertyGraphIndex(
+            nodes=nodes,
+            llm=custom_llm,
+            embed_model=custom_embedder,
+            include_embeddings=True,
+        )
 
     retrieved_nodes = get_retrieved_nodes(graph_index, custom_llm, custom_embedder, data.input_promt, vector_top_k=30, reranker_top_n=5, with_reranker=True)
 
@@ -108,11 +112,15 @@ def main():
         text = str(node.node.get_text())
         facts.append(text)
 
-    # print(retrieved_nodes)
-    
-
     result = checker.check_facts(data.input_promt, facts)
     print(result)
 
 if __name__ == '__main__':
+    start_time = time.time()
     main()
+    end_time = time.time()
+
+    execution_time_seconds = end_time - start_time
+    execution_time_minutes = execution_time_seconds / 60
+
+    print(f"Функция выполнилась за {execution_time_minutes:.2f} минут")

@@ -2,6 +2,7 @@ from typing import Optional
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
 import requests
+import aiohttp
 
 class YandexCloudLLM:
     """
@@ -89,7 +90,6 @@ class YandexCloudLLM:
                 timeout=self.timeout
             )
             
-            # Получаем ответ
             result = response.choices[0].message.content
 
             return result
@@ -149,3 +149,33 @@ class YandexCloudLLM:
         except Exception as e:
             print(f"Ошибка при запросе к LLM API: {str(e)}")
             raise
+
+    async def request_gpt_async(
+        self,
+        prompt: str,
+        system_prompt: str = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None
+    ) -> str:
+        data = {}
+        data["modelUri"] = self.model
+        data["completionOptions"] = {"temperature": temperature, "maxTokens": max_tokens}
+        data["messages"] = []
+        if (system_prompt != None):
+            data["messages"].append({"role": "system", "text": system_prompt})
+        data["messages"].append({"role": "user", "text": prompt})
+        
+        headers={
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(self.model_url, headers=headers, json=data) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                else:
+                    text = await resp.text()
+                    print("error:", text)
+                result = data["result"]["alternatives"]
+                assert len(result) != 0, "error"
+                return result[0]["message"]["text"]
