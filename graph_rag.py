@@ -11,7 +11,7 @@ EMB_URL="https://llm.api.cloud.yandex.net/foundationModels/v1/textEmbedding"
 GPT_URL="https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
 
 emb_model = YandexCloudLLM(tokens.AUTH_TOKEN, tokens.FOLDER_ID, EMB_URL, "text-search-doc", "emb")
-rag_model = YandexCloudLLM(tokens.AUTH_TOKEN, tokens.FOLDER_ID, GPT_URL, "yandexgpt-lite")
+rag_model = YandexCloudLLM(tokens.AUTH_TOKEN, tokens.FOLDER_ID, GPT_URL, "yandexgpt")
 
 class CustomEmbeddingModel(BaseEmbedding):
     def __init__(self):
