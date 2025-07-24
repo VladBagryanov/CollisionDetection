@@ -13,20 +13,35 @@ GPT_URL="https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
 emb_model = YandexCloudLLM(tokens.AUTH_TOKEN, tokens.FOLDER_ID, EMB_URL, "text-search-doc", "emb")
 rag_model = YandexCloudLLM(tokens.AUTH_TOKEN, tokens.FOLDER_ID, GPT_URL, "yandexgpt-lite")
 
+# Глобальный кэш для эмбеддингов в памяти
+_embeddings_cache = {}
+
 class CustomEmbeddingModel(BaseEmbedding):
     def __init__(self):
         super().__init__(model_name="custom_embedder")
 
     def _get_query_embedding(self, query: str) -> list[float]:
-        ans = emb_model.request_emb(query)
-        return ans
+        # Проверяем кэш
+        if query in _embeddings_cache:
+            return _embeddings_cache[query]
+        
+        # Если нет в кэше, запрашиваем новый
+        embedding = emb_model.request_emb(query)
+        _embeddings_cache[query] = embedding
+        return embedding
 
     async def _aget_query_embedding(self, query: str) -> list[float]:
         return self._get_query_embedding(query)
 
     def _get_text_embedding(self, text: str) -> list[float]:
-        ans = emb_model.request_emb(text)
-        return ans
+        # Проверяем кэш
+        if text in _embeddings_cache:
+            return _embeddings_cache[text]
+        
+        # Если нет в кэше, запрашиваем новый
+        embedding = emb_model.request_emb(text)
+        _embeddings_cache[text] = embedding
+        return embedding
 
 class CustomLLMAPI(CustomLLM):
     def __init__(self):
