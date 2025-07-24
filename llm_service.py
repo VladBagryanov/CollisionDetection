@@ -1,5 +1,5 @@
 from typing import Optional
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
 import requests
 import aiohttp
@@ -39,7 +39,11 @@ class YandexCloudLLM:
             api_key=api_key,
             base_url="https://llm.api.cloud.yandex.net/v1"
         )
-        
+        self.async_client = AsyncOpenAI(
+            api_key=api_key,
+            base_url="https://llm.api.cloud.yandex.net/v1"
+        )
+
         self.model = f"{model_type}://{folder_id}/{model_uri}/latest"
         self.temperature = temperature
         self.max_tokens = max_tokens
@@ -99,6 +103,10 @@ class YandexCloudLLM:
             print(f"Ошибка при запросе к LLM API: {str(e)}")
             raise
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10)
+    )
     def request_gpt(
         self,
         prompt: str,
@@ -106,51 +114,55 @@ class YandexCloudLLM:
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None
     ) -> str:
-        data = {}
-        data["modelUri"] = self.model
-        data["completionOptions"] = {"temperature": temperature, "maxTokens": max_tokens}
-        data["messages"] = []
-        if (system_prompt != None):
-            data["messages"].append({"role": "system", "text": system_prompt})
-        data["messages"].append({"role": "user", "text": prompt})
-        
-        try:
-            response = requests.post(
-                self.model_url,
-                headers={
-                    "Accept": "application/json",
-                    "Authorization": f"Bearer {self.api_key}"
-                },
-                json=data,
-            )
-            result = response.json()["result"]["alternatives"]
-            assert len(result) != 0, "error"
-            return result[0]["message"]["text"]
-        except Exception as e:
-            print(f"Ошибка при запросе к LLM API: {str(e)}")
-            raise
+        messages = []
+        if system_prompt:
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                }
+            ]
+        messages.append(
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ),
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature or self.temperature,
+            max_tokens=max_tokens or self.max_tokens,
+            timeout=self.timeout
+        )
 
+        result = response.choices[0].message.content
+
+        return result
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10)
+    )
     def request_emb(
         self,
         text: str = None
     ) -> str:
-        try:
-            data = {}
-            data["modelUri"] = self.model
-            data["text"] = text
-            response = requests.post(
-                self.model_url,
-                headers={
-                    "Accept": "application/json",
-                    "Authorization": f"Bearer {self.api_key}"
-                },
-                json=data,
+        return (
+        (self.client.embeddings.create(
+                input=text,
+                model=self.model,
+                encoding_format="float",
             )
-            return response.json()["embedding"]
-        except Exception as e:
-            print(f"Ошибка при запросе к LLM API: {str(e)}")
-            raise
+        )
+        .data[0]
+        .embedding
+        )
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10)
+    )
     async def request_gpt_async(
         self,
         prompt: str,
@@ -158,26 +170,33 @@ class YandexCloudLLM:
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None
     ) -> str:
-        data = {}
-        data["modelUri"] = self.model
-        data["completionOptions"] = {"temperature": temperature, "maxTokens": max_tokens}
-        data["messages"] = []
-        if (system_prompt != None):
-            data["messages"].append({"role": "system", "text": system_prompt})
-        data["messages"].append({"role": "user", "text": prompt})
-        
-        headers={
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.api_key}"
-        }
-        # async with gpt_limiter:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(self.model_url, headers=headers, json=data) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                else:
-                    text = await resp.text()
-                    print("error:", text)
-                result = data["result"]["alternatives"]
-                assert len(result) != 0, "error"
-                return result[0]["message"]["text"]
+        try:
+            messages = []
+            if system_prompt:
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt
+                    }
+                ]
+            messages.append(
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ),
+            response = await self.async_client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=temperature or self.temperature,
+                max_tokens=max_tokens or self.max_tokens,
+                timeout=self.timeout
+            )
+
+            result = response.choices[0].message.content
+
+            return result
+
+        except Exception as e:
+            print(f"Ошибка при запросе к LLM API: {str(e)}")
+            raise

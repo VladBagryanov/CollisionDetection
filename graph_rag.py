@@ -18,7 +18,6 @@ class CustomEmbeddingModel(BaseEmbedding):
         super().__init__(model_name="custom_embedder")
 
     def _get_query_embedding(self, query: str) -> list[float]:
-        print("get emb")
         ans = emb_model.request_emb(query)
         return ans
 
@@ -26,7 +25,6 @@ class CustomEmbeddingModel(BaseEmbedding):
         return self._get_query_embedding(query)
 
     def _get_text_embedding(self, text: str) -> list[float]:
-        print("get text")
         ans = emb_model.request_emb(text)
         return ans
 
@@ -36,14 +34,12 @@ class CustomLLMAPI(CustomLLM):
 
     def complete(self, prompt: str, **kwargs) -> CompletionResponse:
         ans = rag_model.request_gpt(prompt)
-        print("complete")
         return CompletionResponse(text=ans)
     
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs
     ) -> CompletionResponse:
-        print("acomplete")
         res = await rag_model.request_gpt_async(prompt)
         return CompletionResponse(text=res)
 
@@ -52,7 +48,6 @@ class CustomLLMAPI(CustomLLM):
         return LLMMetadata()
 
     def stream_complete(self, prompt, formatted, **kwargs):
-        print("stream complete")
         ans = rag_model.request_gpt(prompt)
         yield CompletionResponse(text=ans)
 
