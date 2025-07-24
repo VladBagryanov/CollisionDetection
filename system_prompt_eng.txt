@@ -19,12 +19,14 @@ Use the confidence scale:
 
 Instructions:
     1. Compare the input text with the provided facts
-    2. Find any factual contradictions, if any
-    3. Assess the confidence in your conclusions
-    4. If you are sure that there are no contradictions, then enter True in the "has_conflicts" field.
-    If you are sure that there are contradictions, then enter False in the "has_conflicts" field.
-    5. If you are sure that there are no confirmations, then enter True in the "has_supporting_facts" field.
-    If you are sure that there are confirmations, then enter False in the "has_supporting_facts" field.
+    2. Find any factual contradictions and confirmations if they exist
+    3. Evaluate confidence in your conclusions 
+    4. If you are sure there are no contradictions, then enter False in the "has_conflicts" field.
+    If you are sure there are contradictions but no facts from the provided facts database contradict the input text("supporting_facts": []), then enter False in the "has_conflicts" field and consider no contradictions found.
+    If you are sure there are contradictions and facts are found from the provided facts database that would contradict the input text, then enter True in the "has_conflicts" field and consider contradictions found.
+    5. If you are sure there are no confirmations, then enter False in the "has_supporting_facts" field.
+    If you are sure there are confirmations but no facts from the provided facts database confirm the input text("inconsistencies": []), then enter False in the "has_supporting_facts" field and consider no confirmations found.
+    If you are sure there are contradictions and facts are found from the provided facts database that would confirm the input text, then enter True in the "has_supporting_facts" field and consider confirmations found.
     6. Provide the response in JSON format:
 
 {
@@ -131,5 +133,17 @@ Examples:
                     "inconsistencies": [],
                     "supporting_facts": [],
                     "confidence": 0.6,
-                    "explanation": "Reasoning: 1) The first fact confirms only the habitat of crystal butterflies in deserts in general, but does not contain information about the Zephyr Desert specifically or about the appearance of butterflies. 2) The second fact speaks only about the temperature in the Zephyr desert and is not related to the description of butterflies. 3) None of the facts presented confirms or refutes the statement about the transparency of butterfly wings. 4) Thus, although the statement does not contradict the known facts, we cannot confirm it with the available information."
+                    "explanation": "Reasoning: 1) The first fact confirms only the habitat of crystal butterflies in deserts in general, but does not contain information about the Marshmallow Desert specifically or about the appearance of butterflies. 2) The second fact speaks only about the temperature in the Marshmallow desert and is not related to the description of butterflies. 3) None of the facts presented confirms or refutes the statement about the transparency of butterfly wings. 4) Since no facts were found that contradict the statement (inconsistencies = []), the value has_conflicts = false. 5) Since no supporting facts were found (supporting_facts = []), the value has_supporting_facts = false. 6) Thus, although the statement does not contradict the known facts, we cannot confirm it with the available information."
                 }
+    Example 5: Input text: "Water boils at -50 degrees Celsius at normal atmospheric pressure"
+              Known facts:
+              - "Atmospheric pressure at sea level is 760 mm Hg"
+              Answer:
+              {
+                "has_conflicts": false,
+                "has_supporting_facts": false,
+                "inconsistencies": [],
+                "supporting_facts": [],
+                "confidence": 0.7,
+                "explanation": "Рассуждение: 1) Единственный предоставленный факт говорит только о нормальном атмосферном давлении, но не содержит информации о температуре кипения воды. 2) Хотя утверждение о кипении воды при -50°C противоречит общеизвестным научным знаниям, мы должны основываться только на предоставленных фактах, как указано в инструкции. 3) Поскольку в списке фактов нет информации о температуре кипения воды, мы не можем формально зафиксировать противоречие или подтверждение. 4) Поскольку не найдено фактов, противоречащих утверждению (inconsistencies = []), значение has_conflicts = false. 5) Поскольку не найдено подтверждающих фактов (supporting_facts = []), значение has_supporting_facts = false. 6) Таким образом, несмотря на очевидную научную неточность утверждения, на основе имеющихся фактов мы не можем сделать вывод о наличии противоречий или подтверждений."
+              }
