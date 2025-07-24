@@ -145,6 +145,19 @@ class FactConsistencyChecker:
         for sup in response['supporting_facts']:
             if not all(k in sup for k in ['statement', 'fact', 'explanation']):
                 raise ValueError("Некорректная структура элемента supporting_facts")
+        # Удаляем элементы с пустыми фактами из списка противоречий
+        response['inconsistencies'] = [inc for inc in response['inconsistencies'] if inc.get('fact')]
+        
+        # Если после фильтрации список пустой, устанавливаем has_conflicts в False
+        if not response['inconsistencies']:
+            response['has_conflicts'] = False
+            
+        # Удаляем элементы с пустыми фактами из списка подтверждающих фактов
+        response['supporting_facts'] = [sup for sup in response['supporting_facts'] if sup.get('fact')]
+        
+        # Если после фильтрации список пустой, устанавливаем has_supporting_facts в False
+        if not response['supporting_facts']:
+            response['has_supporting_facts'] = False
 
     def _create_prompt(self, text: str, facts: List[str]) -> str:
         """
