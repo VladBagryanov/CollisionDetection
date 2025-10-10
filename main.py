@@ -8,7 +8,7 @@ from llama_index.core import PropertyGraphIndex
 from fact_checker import checker
 from llama_index.core.postprocessor import LLMRerank
 from llama_index.core.prompts import PromptTemplate
-from llama_index.graph_stores.neo4j import Neo4jPGStore
+# from llama_index.graph_stores.neo4j import Neo4jPGStore
 
 from llama_index.core.retrievers import VectorContextRetriever, LLMSynonymRetriever
 from llama_index.core import QueryBundle
@@ -90,12 +90,12 @@ def main():
 
     nodes = data.node_getter()
 
-    graph_store = Neo4jPGStore(url="bolt://localhost:7687", username="neo4j", password="supersecret123")
+    # graph_store = Neo4jPGStore(url="bolt://localhost:7687", username="neo4j", password="supersecret123")
     graph_index = None
     if args.has_graph:
         graph_index = PropertyGraphIndex.from_existing(
             llm=custom_llm,
-            property_graph_store=graph_store,
+            # property_graph_store=graph_store,
             embed_model=custom_embedder,
             include_embeddings=True,
         )
@@ -103,7 +103,7 @@ def main():
         graph_index = PropertyGraphIndex(
             nodes=nodes,
             llm=custom_llm,
-            property_graph_store=graph_store,
+            # property_graph_store=graph_store,
             embed_model=custom_embedder,
             include_embeddings=True,
         )
