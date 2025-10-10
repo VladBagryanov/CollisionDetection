@@ -1,0 +1,17 @@
+.errorContainer {
+  max-width: 800px;
+  margin: 32px auto;
+  padding: 0 16px;
+}
+
+.stackTrace {
+  display: block;
+  margin-top: 16px;
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  font-size: 12px;
+} 

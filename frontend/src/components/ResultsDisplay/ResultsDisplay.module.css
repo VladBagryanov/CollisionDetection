@@ -1,0 +1,59 @@
+.results {
+  max-width: 800px;
+  margin: 24px auto;
+}
+
+.confidence {
+  margin-bottom: 24px;
+}
+
+.confidenceLabel {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.confidenceValue {
+  font-weight: 600;
+}
+
+.tableTitle {
+  margin-bottom: 16px;
+  color: rgba(0, 0, 0, 0.88);
+  font-weight: 500;
+}
+
+.explanation {
+  margin-top: 24px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.explanationTitle {
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.score {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: #f5f5f5;
+  margin-left: 8px;
+}
+
+.scoreHigh {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.scoreMedium {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.scoreLow {
+  background: #fff1f0;
+  color: #f5222d;
+} 

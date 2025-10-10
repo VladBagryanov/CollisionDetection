@@ -1,0 +1,23 @@
+.queryInput {
+  max-width: 800px;
+  margin: 24px auto;
+}
+
+.textarea {
+  margin-bottom: 16px;
+}
+
+.submitButton {
+  width: 100%;
+}
+
+.error {
+  margin-bottom: 16px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 120px;
+} 
