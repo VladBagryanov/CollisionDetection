@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система поиска в корпоративной документации</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 50px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            font-weight: 300;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .status-online {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+        }
+
+        .status-offline {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+
+        .main-content {
+            display: flex;
+            min-height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            width: 350px;
+            background: #f8f9fa;
+            border-right: 1px solid #e1e5e9;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .search-section {
+            flex: 1;
+            padding: 40px;
+            background: white;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 18px 25px;
+            border: 2px solid #e1e5e9;
+            border-radius: 15px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #fafbfc;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 4px rgba(79, 172, 254, 0.1);
+            background: white;
+        }
+
+        .search-btn {
+            padding: 18px 35px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .search-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .search-btn:hover::before {
+            left: 100%;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(79, 172, 254, 0.4);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .quick-btn {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .quick-btn:hover {
+            background: #4facfe;
+            color: white;
+            border-color: #4facfe;
+        }
+
+        .filters {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 1px solid #e1e5e9;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .filters h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-group {
+            margin-bottom: 20px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .stats {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 1px solid #e1e5e9;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stats h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .history {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #e1e5e9;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .history h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 4px solid #4facfe;
+            position: relative;
+        }
+
+        .history-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .history-item .question {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+
+        .history-item .meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .history-item .confidence {
+            background: #e8f5e8;
+            color: #2d5a2d;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border-left: 5px solid #4facfe;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .result-answer {
+            font-size: 1.2rem;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .confidence {
+            display: inline-block;
+            background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+            color: #2d5a2d;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .sources {
+            margin-top: 20px;
+        }
+
+        .sources h4 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .source-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #e1e5e9;
+            transition: all 0.2s ease;
+        }
+
+        .source-item:hover {
+            border-color: #4facfe;
+            box-shadow: 0 3px 10px rgba(79, 172, 254, 0.1);
+        }
+
+        .source-document {
+            font-weight: 700;
+            color: #4facfe;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .source-page {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .source-quote {
+            color: #555;
+            font-style: italic;
+            line-height: 1.6;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #4facfe;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 40px;
+            color: #666;
+        }
+
+        .no-results h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .no-results p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .error {
+            background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
+            color: #d63031;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 5px solid #d63031;
+            box-shadow: 0 3px 10px rgba(214, 48, 49, 0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: 2;
+            }
+            
+            .search-section {
+                order: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .search-section {
+                padding: 20px;
+            }
+            
+            .sidebar {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <h1>🔍 Система поиска в документации</h1>
+                <p>Интеллектуальный поиск по корпоративным документам с использованием ИИ</p>
+                <div class="status-indicator" id="statusIndicator">
+                    <span id="statusText">Проверка подключения...</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="quick-actions">
+                    <button class="quick-btn" onclick="clearSearch()">Очистить</button>
+                    <button class="quick-btn" onclick="exportResults()">Экспорт</button>
+                    <button class="quick-btn" onclick="toggleAdvanced()">Расширенные</button>
+                </div>
+                
+                <div class="filters" id="filtersPanel">
+                    <h3>🔧 Фильтры поиска</h3>
+                    
+                    <div class="filter-group">
+                        <label for="documentType">Тип документа:</label>
+                        <select id="documentType">
+                            <option value="">Все документы</option>
+                            <option value="manual">Руководства</option>
+                            <option value="safety">Безопасность</option>
+                            <option value="technical">Техническая документация</option>
+                            <option value="procedure">Процедуры</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="confidenceLevel">Минимальная уверенность:</label>
+                        <select id="confidenceLevel">
+                            <option value="0">Любая</option>
+                            <option value="0.3">30%+</option>
+                            <option value="0.5">50%+</option>
+                            <option value="0.7">70%+</option>
+                            <option value="0.9">90%+</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="dateRange">Период создания:</label>
+                        <select id="dateRange">
+                            <option value="">Любой</option>
+                            <option value="week">Последняя неделя</option>
+                            <option value="month">Последний месяц</option>
+                            <option value="quarter">Последний квартал</option>
+                            <option value="year">Последний год</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="department">Отдел:</label>
+                        <select id="department">
+                            <option value="">Все отделы</option>
+                            <option value="production">Производство</option>
+                            <option value="safety">Безопасность</option>
+                            <option value="maintenance">Обслуживание</option>
+                            <option value="quality">Качество</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <h3>📊 Статистика сессии</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Всего запросов:</span>
+                        <span class="stat-value" id="totalQueries">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Успешных поисков:</span>
+                        <span class="stat-value" id="foundAnswers">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Средняя уверенность:</span>
+                        <span class="stat-value" id="avgConfidence">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Время сессии:</span>
+                        <span class="stat-value" id="sessionTime">0 мин</span>
+                    </div>
+                </div>
+                
+                <div class="history">
+                    <h3>📝 История запросов</h3>
+                    <div id="historyList">
+                        <div style="text-align: center; color: #666; padding: 30px;">
+                            <div style="font-size: 2rem; margin-bottom: 10px;">📋</div>
+                            История запросов пуста
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-section">
+                <form class="search-form" id="searchForm">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        id="questionInput" 
+                        placeholder="Введите ваш вопрос о документации..."
+                        required
+                    >
+                    <button type="submit" class="search-btn" id="searchBtn">
+                        🔍 Найти
+                    </button>
+                </form>
+                
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <span class="loading-text">Поиск в документах...</span>
+                </div>
+                
+                <div id="results" class="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Глобальные переменные
+        const searchForm = document.getElementById('searchForm');
+        const questionInput = document.getElementById('questionInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const historyList = document.getElementById('historyList');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        
+        // Статистика
+        let stats = {
+            totalQueries: 0,
+            foundAnswers: 0,
+            totalConfidence: 0,
+            sessionStart: Date.now()
+        };
+
+        // История запросов
+        let searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+        let advancedMode = false;
+
+        // Проверка статуса сервера
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('/api/status');
+                if (response.ok) {
+                    statusIndicator.className = 'status-indicator status-online';
+                    statusText.textContent = 'Сервер подключен';
+                } else {
+                    throw new Error('Сервер недоступен');
+                }
+            } catch (error) {
+                statusIndicator.className = 'status-indicator status-offline';
+                statusText.textContent = 'Сервер недоступен';
+            }
+        }
+
+        // Обновляем статистику
+        function updateStats() {
+            document.getElementById('totalQueries').textContent = stats.totalQueries;
+            document.getElementById('foundAnswers').textContent = stats.foundAnswers;
+            const avgConfidence = stats.totalQueries > 0 ? (stats.totalConfidence / stats.totalQueries) : 0;
+            document.getElementById('avgConfidence').textContent = Math.round(avgConfidence * 100) + '%';
+            
+            const sessionTime = Math.floor((Date.now() - stats.sessionStart) / 60000);
+            document.getElementById('sessionTime').textContent = sessionTime + ' мин';
+        }
+
+        // Обновляем историю
+        function updateHistory() {
+            if (searchHistory.length === 0) {
+                historyList.innerHTML = `
+                    <div style="text-align: center; color: #666; padding: 30px;">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">📋</div>
+                        История запросов пуста
+                    </div>
+                `;
+                return;
+            }
+
+            historyList.innerHTML = searchHistory.slice(-10).reverse().map((item, index) => `
+                <div class="history-item" onclick="loadFromHistory('${item.question.replace(/'/g, "\\'")}')">
+                    <div class="question">${item.question}</div>
+                    <div class="meta">
+                        <span>${new Date(item.timestamp).toLocaleString()}</span>
+                        <span class="confidence">${Math.round(item.confidence * 100)}%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Загружаем из истории
+        function loadFromHistory(question) {
+            questionInput.value = question;
+            performSearch(question);
+        }
+
+        // Добавляем в историю
+        function addToHistory(question, result) {
+            const historyItem = {
+                question: question,
+                timestamp: Date.now(),
+                found: result.found_information,
+                confidence: result.confidence
+            };
+            
+            searchHistory.push(historyItem);
+            if (searchHistory.length > 100) {
+                searchHistory = searchHistory.slice(-100);
+            }
+            
+            localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+            updateHistory();
+        }
+
+        // Выполняем поиск
+        async function performSearch(question) {
+            // Показываем загрузку
+            loading.style.display = 'block';
+            results.innerHTML = '';
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Поиск...';
+
+            try {
+                const filters = {
+                    documentType: document.getElementById('documentType').value,
+                    confidenceLevel: parseFloat(document.getElementById('confidenceLevel').value),
+                    dateRange: document.getElementById('dateRange').value,
+                    department: document.getElementById('department').value
+                };
+
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        data_path: 'input_data',
+                        chunker: 'basic',
+                        filters: filters
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+                addToHistory(question, data);
+                
+                // Обновляем статистику
+                stats.totalQueries++;
+                if (data.found_information) {
+                    stats.foundAnswers++;
+                }
+                stats.totalConfidence += data.confidence || 0;
+                updateStats();
+
+            } catch (error) {
+                console.error('Ошибка поиска:', error);
+                results.innerHTML = `
+                    <div class="error">
+                        <strong>Ошибка поиска:</strong> ${error.message}
+                        <br><br>
+                        <strong>Возможные решения:</strong>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            <li>Убедитесь, что backend сервер запущен: <code>python3 app.py</code></li>
+                            <li>Проверьте подключение к Neo4j</li>
+                            <li>Попробуйте перезапустить сервер</li>
+                        </ul>
+                    </div>
+                `;
+            } finally {
+                loading.style.display = 'none';
+                searchBtn.disabled = false;
+                searchBtn.textContent = '🔍 Найти';
+            }
+        }
+
+        // Отображаем результаты
+        function displayResults(data) {
+            if (!data.found_information) {
+                results.innerHTML = `
+                    <div class="no-results">
+                        <h3>Информация не найдена</h3>
+                        <p>В предоставленных документах не найдена информация для ответа на ваш вопрос.</p>
+                        <p>Попробуйте переформулировать вопрос или обратитесь к техническому отделу.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let sourcesHtml = '';
+            if (data.sources && data.sources.length > 0) {
+                sourcesHtml = `
+                    <div class="sources">
+                        <h4>📚 Найденные источники:</h4>
+                        ${data.sources.map((source, index) => `
+                            <div class="source-item">
+                                <div class="source-document">📄 ${source.document}</div>
+                                <div class="source-page">📄 Страница: ${source.page}</div>
+                                <div class="source-quote">"${source.quote}"</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            results.innerHTML = `
+                <div class="result-card">
+                    <div class="confidence">
+                        Уверенность: ${(data.confidence * 100).toFixed(1)}%
+                    </div>
+                    <div class="result-answer">
+                        <strong>Ответ:</strong><br>
+                        ${data.answer}
+                    </div>
+                    ${sourcesHtml}
+                </div>
+            `;
+        }
+
+        // Дополнительные функции
+        function clearSearch() {
+            questionInput.value = '';
+            results.innerHTML = '';
+        }
+
+        function exportResults() {
+            if (searchHistory.length === 0) {
+                alert('Нет данных для экспорта');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(searchHistory, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'search_history.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function toggleAdvanced() {
+            advancedMode = !advancedMode;
+            const filtersPanel = document.getElementById('filtersPanel');
+            if (advancedMode) {
+                filtersPanel.style.display = 'block';
+            } else {
+                filtersPanel.style.display = 'none';
+            }
+        }
+
+        // Обработчики событий
+        searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            await performSearch(question);
+        });
+
+        // Инициализация
+        checkServerStatus();
+        updateStats();
+        updateHistory();
+        
+        // Обновляем статистику каждую минуту
+        setInterval(updateStats, 60000);
+        
+        // Проверяем статус сервера каждые 30 секунд
+        setInterval(checkServerStatus, 30000);
+    </script>
+</body>
+</html>
+
+
+

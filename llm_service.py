@@ -15,7 +15,7 @@ class YandexCloudLLM:
         api_key: str,
         folder_id: str,
         model_url: str = None,
-        model_uri: str = "llama-lite",
+        model_uri: str = "yandexgpt-lite",
         model_type: str = "gpt",
         temperature: float = 0.1,
         max_tokens: int = 1000,

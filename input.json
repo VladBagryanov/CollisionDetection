@@ -1,6 +1,1 @@
-{
-  "conflict": "Arya Stark is not the daughter of Eddard Stark",
-  "format": "text",
-  "data_path": "input_data",
-  "chunker": "basic"
-}
+{"conflict": "отключения на рукоятке может быть больше 300 Н", "format": "text", "data_path": "input_data", "chunker": "basic"}

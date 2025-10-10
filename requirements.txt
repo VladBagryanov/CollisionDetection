@@ -1,0 +1,9 @@
+numpy>=1.24.0
+faiss-cpu>=1.7.4
+nltk>=3.8.1
+sentence-transformers>=2.2.2
+torch>=2.0.0
+openai>=1.12.0
+tenacity>=8.2.3
+typing-extensions>=4.5.0
+python-dotenv>=1.0.0 

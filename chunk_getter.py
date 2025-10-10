@@ -65,7 +65,7 @@ class Data:
             docs = SimpleDirectoryReader(input_dir=self.data_path, recursive=True).load_data()
         if self.format == "csv":
             pass
-    
+        
         nodes = []
         if self.chunker == "basic":
             nodes = self.basic_chunks(docs)

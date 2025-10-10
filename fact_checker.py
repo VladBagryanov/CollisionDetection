@@ -214,7 +214,7 @@ class FactConsistencyChecker:
 llm_service = YandexCloudLLM(
     api_key=tokens.AUTH_TOKEN,
     folder_id=tokens.FOLDER_ID,
-    model_uri="llama-lite",
+    model_uri="yandexgpt-lite",
     temperature=0.1
 )
 

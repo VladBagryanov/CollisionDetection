@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Продвинутый поиск в документации</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #f8f9fa;
+            border-right: 1px solid #e1e5e9;
+            padding: 20px;
+        }
+
+        .search-section {
+            flex: 1;
+            padding: 40px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .filters h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .filter-group {
+            margin-bottom: 15px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .history {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .history h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .history-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid #4facfe;
+        }
+
+        .history-item:hover {
+            background: #e9ecef;
+        }
+
+        .history-item .question {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .history-item .time {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4facfe;
+        }
+
+        .result-answer {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .confidence {
+            display: inline-block;
+            background: #e8f5e8;
+            color: #2d5a2d;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .sources {
+            margin-top: 15px;
+        }
+
+        .sources h4 {
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .source-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .source-document {
+            font-weight: 600;
+            color: #4facfe;
+            margin-bottom: 5px;
+        }
+
+        .source-page {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .source-quote {
+            color: #555;
+            font-style: italic;
+            line-height: 1.5;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .no-results h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .error {
+            background: #ffe6e6;
+            color: #d63031;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #d63031;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .stats h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #666;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: 2;
+            }
+            
+            .search-section {
+                order: 1;
+            }
+            
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .search-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Продвинутый поиск в документации</h1>
+            <p>Интеллектуальный поиск с фильтрами и историей запросов</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="filters">
+                    <h3>🔧 Фильтры поиска</h3>
+                    
+                    <div class="filter-group">
+                        <label for="documentType">Тип документа:</label>
+                        <select id="documentType">
+                            <option value="">Все документы</option>
+                            <option value="manual">Руководства</option>
+                            <option value="safety">Безопасность</option>
+                            <option value="technical">Техническая документация</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="confidenceLevel">Минимальная уверенность:</label>
+                        <select id="confidenceLevel">
+                            <option value="0">Любая</option>
+                            <option value="0.5">50%+</option>
+                            <option value="0.7">70%+</option>
+                            <option value="0.9">90%+</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="dateRange">Период:</label>
+                        <select id="dateRange">
+                            <option value="">Любой</option>
+                            <option value="week">Последняя неделя</option>
+                            <option value="month">Последний месяц</option>
+                            <option value="year">Последний год</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <h3>📊 Статистика</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Всего запросов:</span>
+                        <span class="stat-value" id="totalQueries">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Найдено ответов:</span>
+                        <span class="stat-value" id="foundAnswers">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Средняя уверенность:</span>
+                        <span class="stat-value" id="avgConfidence">0%</span>
+                    </div>
+                </div>
+                
+                <div class="history">
+                    <h3>📝 История запросов</h3>
+                    <div id="historyList">
+                        <div style="text-align: center; color: #666; padding: 20px;">
+                            История запросов пуста
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-section">
+                <form class="search-form" id="searchForm">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        id="questionInput" 
+                        placeholder="Введите ваш вопрос..."
+                        required
+                    >
+                    <button type="submit" class="search-btn" id="searchBtn">
+                        Найти
+                    </button>
+                </form>
+                
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    Поиск в документах...
+                </div>
+                
+                <div id="results" class="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const searchForm = document.getElementById('searchForm');
+        const questionInput = document.getElementById('questionInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const historyList = document.getElementById('historyList');
+        
+        // Статистика
+        let stats = {
+            totalQueries: 0,
+            foundAnswers: 0,
+            totalConfidence: 0
+        };
+
+        // История запросов
+        let searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+
+        // Обновляем статистику
+        function updateStats() {
+            document.getElementById('totalQueries').textContent = stats.totalQueries;
+            document.getElementById('foundAnswers').textContent = stats.foundAnswers;
+            const avgConfidence = stats.totalQueries > 0 ? (stats.totalConfidence / stats.totalQueries) : 0;
+            document.getElementById('avgConfidence').textContent = Math.round(avgConfidence * 100) + '%';
+        }
+
+        // Обновляем историю
+        function updateHistory() {
+            if (searchHistory.length === 0) {
+                historyList.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">История запросов пуста</div>';
+                return;
+            }
+
+            historyList.innerHTML = searchHistory.slice(-10).reverse().map((item, index) => `
+                <div class="history-item" onclick="loadFromHistory('${item.question}')">
+                    <div class="question">${item.question}</div>
+                    <div class="time">${new Date(item.timestamp).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        // Загружаем из истории
+        function loadFromHistory(question) {
+            questionInput.value = question;
+            performSearch(question);
+        }
+
+        // Добавляем в историю
+        function addToHistory(question, result) {
+            const historyItem = {
+                question: question,
+                timestamp: Date.now(),
+                found: result.found_information,
+                confidence: result.confidence
+            };
+            
+            searchHistory.push(historyItem);
+            if (searchHistory.length > 50) {
+                searchHistory = searchHistory.slice(-50);
+            }
+            
+            localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+            updateHistory();
+        }
+
+        // Выполняем поиск
+        async function performSearch(question) {
+            // Показываем загрузку
+            loading.style.display = 'block';
+            results.innerHTML = '';
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Поиск...';
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        data_path: 'input_data',
+                        chunker: 'basic'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+                addToHistory(question, data);
+                
+                // Обновляем статистику
+                stats.totalQueries++;
+                if (data.found_information) {
+                    stats.foundAnswers++;
+                }
+                stats.totalConfidence += data.confidence || 0;
+                updateStats();
+
+            } catch (error) {
+                console.error('Ошибка поиска:', error);
+                results.innerHTML = `
+                    <div class="error">
+                        <strong>Ошибка поиска:</strong> ${error.message}
+                        <br><br>
+                        Убедитесь, что backend сервер запущен на порту 5000.
+                    </div>
+                `;
+            } finally {
+                loading.style.display = 'none';
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Найти';
+            }
+        }
+
+        searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            await performSearch(question);
+        });
+
+        function displayResults(data) {
+            if (!data.found_information) {
+                results.innerHTML = `
+                    <div class="no-results">
+                        <h3>Информация не найдена</h3>
+                        <p>В предоставленных документах не найдена информация для ответа на ваш вопрос.</p>
+                        <p>Рекомендуем обратиться к техническому отделу или найти дополнительную документацию.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let sourcesHtml = '';
+            if (data.sources && data.sources.length > 0) {
+                sourcesHtml = `
+                    <div class="sources">
+                        <h4>📚 Источники:</h4>
+                        ${data.sources.map(source => `
+                            <div class="source-item">
+                                <div class="source-document">📄 ${source.document}</div>
+                                <div class="source-page">📄 Страница: ${source.page}</div>
+                                <div class="source-quote">"${source.quote}"</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            results.innerHTML = `
+                <div class="result-card">
+                    <div class="confidence">
+                        Уверенность: ${(data.confidence * 100).toFixed(1)}%
+                    </div>
+                    <div class="result-answer">
+                        <strong>Ответ:</strong><br>
+                        ${data.answer}
+                    </div>
+                    ${sourcesHtml}
+                </div>
+            `;
+        }
+
+        // Инициализация
+        updateStats();
+        updateHistory();
+    </script>
+</body>
+</html>
+
+
+

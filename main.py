@@ -81,16 +81,12 @@ def main():
     parser = argparse.ArgumentParser(description="Collision detection.")
     parser.add_argument("--input_json", type=str, help="Path to input json")
     parser.add_argument("--has_graph", type=bool, default=False, help="Exist gpaph")
-
     args = parser.parse_args()
-
     with open(args.input_json, "r") as file:
         input_json = json.load(file)
         data = chunk_getter.Data(input_json["conflict"], input_json["data_path"], chunker=input_json["chunker"])
-
     nodes = data.node_getter()
-
-    graph_store = Neo4jPGStore(url="bolt://localhost:7687", username="neo4j", password="supersecret123")
+    graph_store = Neo4jPGStore(url="bolt://localhost:7687", username="neo4j", password="enrico-cecilia-cable-uranium-twin-190")
     graph_index = None
     if args.has_graph:
         graph_index = PropertyGraphIndex.from_existing(
@@ -107,7 +103,6 @@ def main():
             embed_model=custom_embedder,
             include_embeddings=True,
         )
-
     retrieved_nodes = get_retrieved_nodes(graph_index, custom_llm, custom_embedder, data.input_promt, vector_top_k=30, reranker_top_n=5, with_reranker=True)
 
     facts = []
